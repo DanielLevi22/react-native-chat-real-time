@@ -20,6 +20,8 @@ interface Message {
 function App(): React.JSX.Element {
   const [inputMessage, setInputMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
+  const [isConnected, setIsConnected] = useState(false);
+
   const isDarkMode = useColorScheme() === 'dark';
 
   const ws = useRef<WebSocket | null>(null);
@@ -47,13 +49,13 @@ function App(): React.JSX.Element {
     }
   }
 
+
   useEffect(() => {
-    ws.current = new WebSocket('ws://localhost:3000');
-    // ws.current = new WebSocket('ws://10.0.2.2:3000');
+    ws.current = new WebSocket('ws://192.168.100.20:3000');
 
     ws.current.onopen = () => {
       console.log('WebSocket está aberto e pronto para comunicação.');
-      // Solicita mensagens ao conectar
+      setIsConnected(true);
       ws.current?.send(JSON.stringify({ type: 'fetchMessages' }));
     };
 
@@ -63,10 +65,8 @@ function App(): React.JSX.Element {
         const data = JSON.parse(event.data);
 
         if (data.type === 'allMessages') {
-          // Atualiza o histórico de mensagens
           setMessages(data.messages);
         } else if (data.type === 'newMessage') {
-          // Adiciona nova mensagem recebida
           setMessages((prevMessages) => [...prevMessages, data.responseData]);
         } else if (data.type === 'error') {
           console.error('Erro recebido do servidor:', data.message);
@@ -78,12 +78,15 @@ function App(): React.JSX.Element {
       }
     };
 
-    ws.current.onerror = (error) => {
+    ws.current.onerror = (error: any) => {
       console.error('Erro no WebSocket:', error);
+      console.error('Mensagem do erro:', error.message);
+      console.error('Stack Trace:', error.stack);
+      setIsConnected(false);
     };
-
     ws.current.onclose = () => {
       console.log('Conexão WebSocket fechada');
+      setIsConnected(false);
     };
 
     return () => {
@@ -103,12 +106,25 @@ function App(): React.JSX.Element {
         <View style={styles.TitleContainer}>
           <Text style={styles.chatTitle}>Chat Real Time</Text>
         </View>
-        <Chat
-          onSendMessage={handleSendMessage}
-          inputMessage={inputMessage}
-          setInputMessage={setInputMessage}
-          messages={messages}
-        />
+        {
+          isConnected && (
+            <Chat
+              onSendMessage={handleSendMessage}
+              inputMessage={inputMessage}
+              setInputMessage={setInputMessage}
+              messages={messages}
+            />
+
+          )
+        }
+        {
+          !isConnected && (
+            <View>
+              <Text>{isConnected ? 'Conectado ao servidor' : 'Desconectado do servidor'}
+              </Text>
+            </View>
+          )
+        }
       </View>
     </SafeAreaView>
   );
