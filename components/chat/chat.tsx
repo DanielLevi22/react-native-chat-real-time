@@ -1,5 +1,4 @@
-import React from 'react';
-import { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { KeyboardAvoidingView, View, FlatList, StyleSheet } from 'react-native';
 import { InputMessage } from '../input-message/input-message';
 import { Message } from '../messsage/message';
@@ -10,8 +9,15 @@ interface ChatProps {
   inputMessage: string;
   setInputMessage: React.Dispatch<React.SetStateAction<string>>;
 }
+
 export function Chat({ messages, onSendMessage, inputMessage, setInputMessage }: ChatProps) {
   const flatListRef = useRef<FlatList>(null);
+
+  useEffect(() => {
+    if (flatListRef.current) {
+      flatListRef.current.scrollToEnd({ animated: true });
+    }
+  }, [messages]);
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }}>
@@ -43,8 +49,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   messageListContent: {
-    paddingBottom: 50,
+    paddingBottom: 50,  // Ajuste para garantir espaço para o campo de entrada
     paddingHorizontal: 10,
   },
-
 });

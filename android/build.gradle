@@ -12,7 +12,8 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("com.android.tools.build:gradle")
+        // Definindo a versão do AGP
+        classpath("com.android.tools.build:gradle:8.5.0") // Certifique-se de usar uma versão compatível com seu Android Studio
         classpath("com.facebook.react:react-native-gradle-plugin")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
     }
