@@ -5,13 +5,14 @@ import {
   StatusBar,
   StyleSheet,
   Text,
-  TextInput,
   View,
   useColorScheme,
 } from 'react-native';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
 import { Color } from './styles/global';
 import { Chat } from './components/chat/chat';
+import { InputText } from './components/input-text/input-message';
+import { Button } from './components/button/button';
 
 interface Message {
   id: number;
@@ -69,14 +70,24 @@ function App(): React.JSX.Element {
   function handleSendIpChange() {
     const ipRegex = /^(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)$/;
 
-    if (ipRegex.test(inputIpText)) {
-      connectWebSocket(inputIpText);
-    } else {
-      Alert.alert('Por favor, insira um IP válido.');
+    try {
+      if (ipRegex.test(inputIpText)) {
+        connectWebSocket(inputIpText);
+        setInputIpText('');
+      } else {
+        throw new Error('IP inválido');
+      }
+    } catch (error) {
+     return Alert.alert('Erro', 'Não foi possível conectar ao servidor. Tente novamente.');
     }
   }
 
-  function handleSendMessage (){
+  function handleSendMessage() {
+    if (inputMessage.trim() === '') {
+      Alert.alert('Mensagem vazia', 'Digite uma mensagem antes de enviar.');
+      return;
+    }
+
     const data = {
       type: 'sendMessage',
       messageData: {
@@ -87,7 +98,7 @@ function App(): React.JSX.Element {
 
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
       ws.current.send(JSON.stringify(data));
-      setInputMessage('');
+      setInputMessage(''); // Limpar o campo de mensagem após enviar
     } else {
       Alert.alert('WebSocket não está conectado.');
     }
@@ -108,29 +119,34 @@ function App(): React.JSX.Element {
       <View style={styles.container}>
         <View style={styles.inputContainer}>
           {!isConnected ? (
-            <>
-              <TextInput
-                style={styles.input}
-                placeholder="Digite o IP do servidor"
-                value={inputIpText}
-                onChangeText={setInputIpText}
-                onSubmitEditing={handleSendIpChange}
-              />
+            <View style={styles.serverContainer}>
               <Text style={styles.statusText}>Desconectado do servidor</Text>
-            </>
+              <Text style={styles.description}>Digite o IP da Máquina do Servidor</Text>
+
+              <View style={styles.inputContainerServe}>
+                <InputText
+                  inputText={inputIpText}
+                  setInputText={setInputIpText}
+                  placeholder="xxx.xxx.xxx.xx"
+                />
+                <Button onSendMessage={handleSendIpChange} />
+              </View>
+            </View>
           ) : (
             <>
-              <Text style={styles.TitleText}>Chat Real Time</Text>
+              <Text style={styles.TitleText}>Chat em Tempo Real</Text>
               <View style={styles.chatContainer}>
-
-                <Chat
-                  messages={messages}
-                  inputMessage={inputMessage}
-                  setInputMessage={setInputMessage}
-                  onSendMessage={handleSendMessage}
-                />
+                <Chat messages={messages} />
               </View>
 
+              <View style={styles.inputContainerServe}>
+                <InputText
+                  inputText={inputMessage}
+                  setInputText={setInputMessage}
+                  placeholder="Digite sua mensagem"
+                />
+                <Button onSendMessage={handleSendMessage} />
+              </View>
             </>
           )}
         </View>
@@ -147,7 +163,6 @@ const styles = StyleSheet.create({
   inputContainer: {
     flex: 1,
     justifyContent: 'center',
-    padding: 20,
   },
   input: {
     borderColor: 'gray',
@@ -166,8 +181,14 @@ const styles = StyleSheet.create({
   },
   statusText: {
     textAlign: 'center',
-    fontSize: 18,
+    fontSize: 20,
+    fontWeight: 600,
     marginVertical: 10,
+  },
+  serverContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   TitleText: {
     textAlign: 'center',
@@ -175,6 +196,19 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     fontWeight: 'bold',
     color: Color.black,
+  },
+  description: {
+    fontSize: 18,
+    textAlign: 'center',
+    marginVertical: 10,
+  },
+  buttonContainer: {
+    marginVertical: 10,
+  },
+  inputContainerServe: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
   },
 });
 

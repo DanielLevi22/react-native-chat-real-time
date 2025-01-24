@@ -1,16 +1,12 @@
 import React, { useEffect, useRef } from 'react';
-import { KeyboardAvoidingView, View, FlatList, StyleSheet } from 'react-native';
-import { InputMessage } from '../input-message/input-message';
-import { Message } from '../messsage/message';
+import { KeyboardAvoidingView, View, FlatList, StyleSheet, Platform } from 'react-native';
+import { Message } from '../message/message';
 
 interface ChatProps {
   messages: { sender: 'Desktop' | 'Mobile'; message: string }[];
-  onSendMessage: () => void;
-  inputMessage: string;
-  setInputMessage: React.Dispatch<React.SetStateAction<string>>;
 }
 
-export function Chat({ messages, onSendMessage, inputMessage, setInputMessage }: ChatProps) {
+export function Chat({ messages}: ChatProps) {
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
@@ -20,7 +16,12 @@ export function Chat({ messages, onSendMessage, inputMessage, setInputMessage }:
   }, [messages]);
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }}>
+    <KeyboardAvoidingView
+    style={{ flex: 1 }}
+    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    keyboardVerticalOffset={Platform.OS === 'android' ? 80 : 0}
+
+    >
       <View style={styles.container}>
         <FlatList
           ref={flatListRef}
@@ -30,11 +31,8 @@ export function Chat({ messages, onSendMessage, inputMessage, setInputMessage }:
           style={styles.messageList}
           contentContainerStyle={styles.messageListContent}
         />
-        <InputMessage
-          onSendMessage={onSendMessage}
-          inputMessage={inputMessage}
-          setInputMessage={setInputMessage}
-        />
+
+
       </View>
     </KeyboardAvoidingView>
   );
@@ -44,12 +42,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: 10,
+    justifyContent: 'flex-end',
   },
   messageList: {
     flex: 1,
   },
   messageListContent: {
-    paddingBottom: 30,  // Ajuste para garantir espaço para o campo de entrada
+    paddingBottom: 30,
     paddingHorizontal: 12,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
   },
 });
