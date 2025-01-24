@@ -57,7 +57,7 @@ Isso abrirá o aplicativo no simulador iOS.
 Caso prefira testar o aplicativo diretamente sem compilar o código, você pode baixar os builds prontos para **Android (APK)** ou **Desktop (EXE)**:
 - **Android (APK)**: O arquivo APK estará disponível no link do drive abaixo.
 - **Desktop (EXE)**: O arquivo EXE estará disponível para Windows disponível no link do drive abaixo ou no repositorio oficial em releases. 
-- **Desktop (EXE)**: O arquivo AppImage estará disponível para Linux disponível no link do drive abaixo ou no repositorio oficial em releases.   
+- **Desktop (AppImage)**: O arquivo AppImage estará disponível para Linux disponível no link do drive abaixo ou no repositorio oficial em releases.   
 
 **Link para os builds:**
   [Google Drive Builds](https://drive.google.com/drive/folders/1TenJtWgueqIFJopleKt_CK4dEgP3dB9w?usp=sharing)
