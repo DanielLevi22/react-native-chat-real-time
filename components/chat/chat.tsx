@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   messageListContent: {
-    paddingBottom: 50,  // Ajuste para garantir espaço para o campo de entrada
-    paddingHorizontal: 10,
+    paddingBottom: 30,  // Ajuste para garantir espaço para o campo de entrada
+    paddingHorizontal: 12,
   },
 });

@@ -1,15 +1,17 @@
 import React, { useEffect, useState, useRef } from 'react';
 import {
+  Alert,
   SafeAreaView,
   StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   View,
   useColorScheme,
 } from 'react-native';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
-import { Chat } from './components/chat/chat';
 import { Color } from './styles/global';
+import { Chat } from './components/chat/chat';
 
 interface Message {
   id: number;
@@ -21,7 +23,7 @@ function App(): React.JSX.Element {
   const [inputMessage, setInputMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isConnected, setIsConnected] = useState(false);
-
+  const [inputIpText, setInputIpText] = useState('');
   const isDarkMode = useColorScheme() === 'dark';
 
   const ws = useRef<WebSocket | null>(null);
@@ -31,8 +33,50 @@ function App(): React.JSX.Element {
     flex: 1,
   };
 
+  const connectWebSocket = (ip: string) => {
+    ws.current = new WebSocket(`ws://${ip}:3000`);
 
-  function handleSendMessage() {
+    ws.current.onopen = () => {
+      console.log('WebSocket conectado.');
+      setIsConnected(true);
+      ws.current?.send(JSON.stringify({ type: 'fetchMessages' }));
+    };
+
+    ws.current.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'allMessages') {
+          setMessages(data.messages);
+        } else if (data.type === 'newMessage') {
+          setMessages((prevMessages) => [...prevMessages, data.responseData]);
+        }
+      } catch (error) {
+        console.error('Erro ao processar mensagem:', error);
+      }
+    };
+
+    ws.current.onerror = (error: any) => {
+      console.error('Erro no WebSocket:', error);
+      setIsConnected(false);
+    };
+
+    ws.current.onclose = () => {
+      console.log('WebSocket desconectado.');
+      setIsConnected(false);
+    };
+  };
+
+  function handleSendIpChange() {
+    const ipRegex = /^(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)$/;
+
+    if (ipRegex.test(inputIpText)) {
+      connectWebSocket(inputIpText);
+    } else {
+      Alert.alert('Por favor, insira um IP válido.');
+    }
+  }
+
+  function handleSendMessage (){
     const data = {
       type: 'sendMessage',
       messageData: {
@@ -45,54 +89,13 @@ function App(): React.JSX.Element {
       ws.current.send(JSON.stringify(data));
       setInputMessage('');
     } else {
-      console.error('WebSocket não está pronto para enviar mensagens.');
+      Alert.alert('WebSocket não está conectado.');
     }
   }
 
-
   useEffect(() => {
-    ws.current = new WebSocket('ws://192.168.100.20:3000');
-
-    ws.current.onopen = () => {
-      console.log('WebSocket está aberto e pronto para comunicação.');
-      setIsConnected(true);
-      ws.current?.send(JSON.stringify({ type: 'fetchMessages' }));
-    };
-
-    ws.current.onmessage = (event) => {
-      try {
-        console.log('Mensagem recebida do servidor:', event.data);
-        const data = JSON.parse(event.data);
-
-        if (data.type === 'allMessages') {
-          setMessages(data.messages);
-        } else if (data.type === 'newMessage') {
-          setMessages((prevMessages) => [...prevMessages, data.responseData]);
-        } else if (data.type === 'error') {
-          console.error('Erro recebido do servidor:', data.message);
-        } else {
-          console.warn('Tipo de mensagem desconhecido:', data.type);
-        }
-      } catch (error) {
-        console.error('Erro ao processar a mensagem recebida:', error);
-      }
-    };
-
-    ws.current.onerror = (error: any) => {
-      console.error('Erro no WebSocket:', error);
-      console.error('Mensagem do erro:', error.message);
-      console.error('Stack Trace:', error.stack);
-      setIsConnected(false);
-    };
-    ws.current.onclose = () => {
-      console.log('Conexão WebSocket fechada');
-      setIsConnected(false);
-    };
-
     return () => {
-      if (ws.current) {
-        ws.current.close();
-      }
+      ws.current?.close();
     };
   }, []);
 
@@ -103,28 +106,34 @@ function App(): React.JSX.Element {
         backgroundColor={backgroundStyle.backgroundColor}
       />
       <View style={styles.container}>
-        <View style={styles.TitleContainer}>
-          <Text style={styles.chatTitle}>Chat Real Time</Text>
-        </View>
-        {
-          isConnected && (
-            <Chat
-              onSendMessage={handleSendMessage}
-              inputMessage={inputMessage}
-              setInputMessage={setInputMessage}
-              messages={messages}
-            />
+        <View style={styles.inputContainer}>
+          {!isConnected ? (
+            <>
+              <TextInput
+                style={styles.input}
+                placeholder="Digite o IP do servidor"
+                value={inputIpText}
+                onChangeText={setInputIpText}
+                onSubmitEditing={handleSendIpChange}
+              />
+              <Text style={styles.statusText}>Desconectado do servidor</Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.TitleText}>Chat Real Time</Text>
+              <View style={styles.chatContainer}>
 
-          )
-        }
-        {
-          !isConnected && (
-            <View>
-              <Text>{isConnected ? 'Conectado ao servidor' : 'Desconectado do servidor'}
-              </Text>
-            </View>
-          )
-        }
+                <Chat
+                  messages={messages}
+                  inputMessage={inputMessage}
+                  setInputMessage={setInputMessage}
+                  onSendMessage={handleSendMessage}
+                />
+              </View>
+
+            </>
+          )}
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -135,14 +144,37 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Color.white,
   },
-  TitleContainer: {
-    paddingTop: 20,
+  inputContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 20,
   },
-  chatTitle: {
-    fontFamily: 'Roboto-Regular',
-    fontSize: 24,
-    fontWeight: 'bold',
+  input: {
+    borderColor: 'gray',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 16,
+    marginVertical: 10,
+  },
+  chatContainer: {
+    flex: 1,
+    marginVertical: 20,
+  },
+  message: {
+    fontSize: 16,
+    marginVertical: 4,
+  },
+  statusText: {
     textAlign: 'center',
+    fontSize: 18,
+    marginVertical: 10,
+  },
+  TitleText: {
+    textAlign: 'center',
+    fontSize: 24,
+    marginVertical: 10,
+    fontWeight: 'bold',
+    color: Color.black,
   },
 });
 
